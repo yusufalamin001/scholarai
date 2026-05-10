@@ -1,0 +1,35 @@
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.development
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+
+# ChromaDB local store
+ai/chroma_store/
+
+# Node
+node_modules/
+.next/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
