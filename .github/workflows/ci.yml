@@ -34,8 +34,8 @@ jobs:
           python-version: "3.11"
       - run: pip install ruff
       - run: ruff check . --ignore E402,F401,F811
-      
-    check-ai:
+
+  check-ai:
     name: Check AI Pipeline
     runs-on: ubuntu-latest
     defaults:
@@ -47,4 +47,3 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m compileall . -q
-
