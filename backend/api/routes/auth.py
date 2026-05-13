@@ -1,68 +1,57 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from db.client import get_db
-from typing import Optional
+from jose import jwt, JWTError
+import httpx
 import os
 
+security = HTTPBearer()
 router = APIRouter()
 
+_jwks_cache = None
 
-def get_current_user(authorization: Optional[str] = Header(None)):
-    """
-    Validates the Supabase JWT token from the Authorization header.
-    Every protected endpoint calls this as a dependency.
-    Returns the user's ID if the token is valid, raises 401 if not.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Missing or invalid authorization header"
+def get_jwks():
+    """Fetches JWKS from Supabase once and caches it for the lifetime of the app."""
+    global _jwks_cache
+    if _jwks_cache is None:
+        url = f"{os.environ['SUPABASE_URL']}/auth/v1/.well-known/jwks.json"
+        response = httpx.get(url, timeout=10.0)
+        response.raise_for_status()
+        _jwks_cache = response.json()
+    return _jwks_cache
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        header = jwt.get_unverified_header(token)
+        kid = header.get("kid")
+
+        jwks = get_jwks()
+        key = next((k for k in jwks["keys"] if k["kid"] == kid), None)
+        if not key:
+            raise HTTPException(status_code=401, detail="Signing key not found")
+
+        payload = jwt.decode(
+            token,
+            key,
+            algorithms=["ES256"],
+            audience="authenticated"
         )
 
-    token = authorization.replace("Bearer ", "")
-    db = get_db()
+        class User:
+            def __init__(self, id, email):
+                self.id = id
+                self.email = email
 
-    try:
-        user = db.auth.get_user(token)
-        return user.user
-    except Exception:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
-        )
+        return User(id=payload["sub"], email=payload.get("email"))
 
-
-@router.get("/me")
-def get_current_user_profile(current_user=Depends(get_current_user)):
-    """
-    Returns the current user's profile from the profiles table.
-    Called by the frontend after login to get faculty, name, university.
-    """
-    db = get_db()
-
-    try:
-        profile = db.table("profiles")\
-            .select("*")\
-            .eq("id", current_user.id)\
-            .single()\
-            .execute()
-
-        if not profile.data:
-            raise HTTPException(
-                status_code=404,
-                detail="Profile not found"
-            )
-
-        return {
-            "id": current_user.id,
-            "email": current_user.email,
-            "profile": profile.data
-        }
-
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        raise HTTPException(status_code=401, detail=str(e))
 
 @router.post("/profile")
 def update_profile(
