@@ -9,7 +9,8 @@ WHY:  Active recall (testing yourself) is one of the most effective study method
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pipeline.retriever import retrieve_context, format_context
-import json, os
+import json
+import os
 
 QUIZ_MODEL = "gemini-2.5-flash-lite"
 

@@ -5,7 +5,7 @@ import os
 
 load_dotenv()
 
-from api.routes import auth, courses, documents, query, quiz, progress, rooms
+from api.routes import auth, courses, documents, query, quiz, progress, rooms, planner
 
 app = FastAPI(
     title="ScholarAI API",
@@ -29,6 +29,7 @@ app.include_router(query.router,     prefix="/query",     tags=["AI Query"])
 app.include_router(quiz.router,      prefix="/quiz",      tags=["Quiz"])
 app.include_router(progress.router,  prefix="/progress",  tags=["Progress"])
 app.include_router(rooms.router,     prefix="/rooms",     tags=["Study Rooms"])
+app.include_router(planner.router,   prefix="/planner",   tags=["Planner"])
 
 @app.get("/health")
 def health_check():
