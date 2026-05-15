@@ -1,3 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg: #F1F5F9;
+  --card: #FFFFFF;
+  --card-hover: #F8FAFC;
+  --border: #E2E8F0;
+  --text: #0F172A;
+  --muted: #475569;
+  --subtle: #94A3B8;
+}
+
+.dark {
+  --bg: #0A0E1A;
+  --card: #141828;
+  --card-hover: #1C2235;
+  --border: #2A3248;
+  --text: #FFFFFF;
+  --muted: #94A3B8;
+  --subtle: #64748B;
+}

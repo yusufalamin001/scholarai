@@ -52,13 +52,25 @@ export default function SignupPage() {
     if (!faculty) { setError('Please select your faculty'); return }
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signUp({
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, faculty } }
     })
-    if (error) { setError(error.message); setLoading(false) }
-    else router.push('/complete-profile')
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    } else {
+      if (data.user) {
+        await supabase
+          .from('profiles')
+          .update({ onboarding_complete: true })
+          .eq('id', data.user.id)
+      }
+      router.push('/courses')
+    }
   }
 
   return (
