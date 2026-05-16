@@ -119,3 +119,10 @@ export async function queryAI(
   if (!res.ok) throw new Error('Failed to get AI response')
   return res.json()
 }
+
+export async function getCourseProgress(courseId: string) {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/progress/${courseId}`, { headers })
+  if (!res.ok) throw new Error('Failed to fetch course progress')
+  return res.json()
+}
