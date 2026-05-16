@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/ui/Sidebar'
 import BottomNav from '@/components/ui/BottomNav'
+import MobileHeader from '@/components/ui/MobileHeader'
 import { UserProvider } from '@/providers/UserProvider'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -24,8 +25,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   )
 
   const { data: { session } } = await supabase.auth.getSession()
-const user = session?.user
-if (!user) redirect('/login')
+  const user = session?.user
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -50,7 +51,8 @@ if (!user) redirect('/login')
     <UserProvider user={userData}>
       <div className="flex min-h-screen bg-theme-bg text-theme-text">
         <Sidebar userName={userName} faculty={faculty} userEmail={user.email || ''} />
-        <main className="flex-1 md:ml-52 pb-16 md:pb-0 min-h-screen">
+        <MobileHeader />
+        <main className="flex-1 md:ml-52 pb-16 md:pb-0 pt-14 md:pt-0 min-h-screen">
           {children}
         </main>
         <BottomNav />
