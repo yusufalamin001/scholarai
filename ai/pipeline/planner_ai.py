@@ -56,10 +56,16 @@ Return JSON with this exact structure:
     response = llm.invoke([HumanMessage(content=prompt)])
     text = response.content.strip()
 
-    # Strip markdown code blocks if Gemini wraps the response
+    # Strip all possible markdown code block variations
     if "```json" in text:
         text = text.split("```json")[1].split("```")[0].strip()
     elif "```" in text:
         text = text.split("```")[1].split("```")[0].strip()
+
+    # Find the first { and last } to extract just the JSON object
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1:
+        text = text[start:end+1]
 
     return json.loads(text)

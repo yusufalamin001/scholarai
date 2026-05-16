@@ -208,3 +208,18 @@ export async function queryRoom(
   if (!res.ok) throw new Error('Failed to query room AI')
   return res.json()
 }
+
+export async function generatePlan(
+  courses: Array<{ name: string; code: string }>,
+  examDate: string,
+  targetCgpa: number
+) {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/planner/generate`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ courses, exam_date: examDate, target_cgpa: targetCgpa })
+  })
+  if (!res.ok) throw new Error('Failed to generate plan')
+  return res.json()
+}
