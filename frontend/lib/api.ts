@@ -126,3 +126,25 @@ export async function getCourseProgress(courseId: string) {
   if (!res.ok) throw new Error('Failed to fetch course progress')
   return res.json()
 }
+
+export async function generateQuiz(courseId: string, topic: string, numQuestions: number) {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/quiz/generate`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ course_id: courseId, topic, num_questions: numQuestions })
+  })
+  if (!res.ok) throw new Error('Failed to generate quiz')
+  return res.json()
+}
+
+export async function submitQuiz(courseId: string, topic: string, score: number, total: number) {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/quiz/submit`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ course_id: courseId, topic, score, total })
+  })
+  if (!res.ok) throw new Error('Failed to submit quiz')
+  return res.json()
+}
