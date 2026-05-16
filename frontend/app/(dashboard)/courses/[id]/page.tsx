@@ -76,12 +76,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      {/* Back link */}
       <Link href="/courses" className="text-theme-muted hover:text-theme-text text-sm flex items-center gap-1 mb-4 transition-colors">
         ← Back
       </Link>
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -101,7 +99,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
             Generate Quiz
           </Link>
           <Link
-            href={`/chat?course=${course.id}`}
+            href={`/courses/${course.id}/chat`}
             className="flex items-center gap-2 bg-[#0EA5E9] hover:bg-[#38BDF8] text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
           >
             <AIIcon className="w-4 h-4" />
@@ -110,7 +108,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="bg-theme-card border border-theme-border rounded-2xl p-5 mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-theme-muted text-xs font-medium uppercase tracking-wide">
@@ -128,7 +125,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 border-b border-theme-border mb-6">
         {(['documents', 'topics', 'quiz-history'] as Tab[]).map(tab => (
           <button
@@ -145,18 +141,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         ))}
       </div>
 
-      {/* Tab content */}
       {activeTab === 'documents' && (
         <div className="space-y-4">
-          <DocumentUpload
-            courseId={course.id}
-            onUploaded={handleDocumentUploaded}
-          />
+          <DocumentUpload courseId={course.id} onUploaded={handleDocumentUploaded} />
           {documents.length > 0 && (
-            <DocumentList
-              documents={documents}
-              onDelete={handleDocumentDeleted}
-            />
+            <DocumentList documents={documents} onDelete={handleDocumentDeleted} />
           )}
         </div>
       )}
