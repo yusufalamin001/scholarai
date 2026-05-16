@@ -97,6 +97,35 @@ def list_rooms(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/join-by-code")
+def join_by_code(body: dict, current_user=Depends(get_current_user)):
+    """Joins a room using only the invite code — no room_id needed."""
+    db = get_db()
+    invite_code = body.get("invite_code", "").strip().upper()
+    if not invite_code:
+        raise HTTPException(status_code=400, detail="invite_code is required")
+    try:
+        room_result = db.table("study_rooms")\
+            .select("*")\
+            .eq("invite_code", invite_code)\
+            .execute()
+        if not room_result.data:
+            raise HTTPException(status_code=404, detail="No room found with that code")
+        room = room_result.data[0]
+        if _is_room_member(db, room["id"], current_user.id):
+            raise HTTPException(status_code=400, detail="You are already in this room")
+        db.table("room_members").insert({
+            "room_id": room["id"],
+            "user_id": current_user.id
+        }).execute()
+        return {"message": "Joined room successfully", "room": room}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.post("/{room_id}/join")
 def join_room(room_id: str, body: RoomJoin, current_user=Depends(get_current_user)):
     """Joins a room using an invite code."""
