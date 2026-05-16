@@ -105,3 +105,17 @@ export async function getProgressSummary(): Promise<ProgressSummary> {
   if (!res.ok) throw new Error('Failed to fetch progress')
   return res.json()
 }
+
+export async function queryAI(
+  courseId: string,
+  question: string
+): Promise<{ answer: string; sources: any[] }> {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/query/`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ course_id: courseId, question })
+  })
+  if (!res.ok) throw new Error('Failed to get AI response')
+  return res.json()
+}
