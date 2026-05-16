@@ -148,3 +148,63 @@ export async function submitQuiz(courseId: string, topic: string, score: number,
   if (!res.ok) throw new Error('Failed to submit quiz')
   return res.json()
 }
+
+export interface Room {
+  id: string
+  name: string
+  course_id: string
+  created_by: string
+  invite_code: string
+  created_at: string
+}
+
+export async function getRooms(): Promise<Room[]> {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/rooms/`, { headers })
+  if (!res.ok) throw new Error('Failed to fetch rooms')
+  return res.json()
+}
+
+export async function createRoom(name: string, courseId: string): Promise<Room> {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/rooms/`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ name, course_id: courseId })
+  })
+  if (!res.ok) throw new Error('Failed to create room')
+  return res.json()
+}
+
+export async function joinRoomByCode(inviteCode: string): Promise<{ room: Room }> {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/rooms/join-by-code`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ invite_code: inviteCode })
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || 'Failed to join room')
+  }
+  return res.json()
+}
+
+export async function deleteRoom(roomId: string): Promise<void> {
+  const headers = await getHeaders()
+  await fetch(`${API_URL}/rooms/${roomId}`, { method: 'DELETE', headers })
+}
+
+export async function queryRoom(
+  roomId: string,
+  question: string
+): Promise<{ answer: string; sources: any[] }> {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/rooms/${roomId}/query`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ question })
+  })
+  if (!res.ok) throw new Error('Failed to query room AI')
+  return res.json()
+}
