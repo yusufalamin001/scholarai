@@ -11,7 +11,10 @@ FLOW: question + course_id + faculty → retrieve → build prompt → Gemini �
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pipeline.retriever import retrieve_context, format_context
 from prompts.loader import get_prompt
+from dotenv import load_dotenv
 import os
+
+load_dotenv(dotenv_path='../backend/.env')
 
 # Gemini Pro for Q&A, Gemini Flash for cheaper tasks
 QA_MODEL = "gemini-2.5-flash"

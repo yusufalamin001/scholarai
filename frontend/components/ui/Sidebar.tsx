@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface SidebarProps {
   userName: string
@@ -26,6 +27,9 @@ export default function Sidebar({ userName, faculty, userEmail, avatarUrl }: Sid
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const initials = userName
     .split(' ')
@@ -109,7 +113,7 @@ export default function Sidebar({ userName, faculty, userEmail, avatarUrl }: Sid
           className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[#94A3B8] hover:bg-[#1C2235] hover:text-white transition-colors w-full"
         >
           <ThemeIcon className="w-4 h-4" />
-          {theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'System'}
+          {mounted ? (theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'System') : 'Theme'}
         </button>
         <Link
           href="/settings"
