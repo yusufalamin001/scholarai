@@ -69,9 +69,9 @@ async def upload_document(
 
     try:
         db.storage.from_("course-documents").upload(
-            storage_path,
-            content,
-            {"content-type": "application/pdf"}
+            path=storage_path,
+            file=content,
+            file_options={"content-type": "application/pdf", "upsert": "false"}
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
