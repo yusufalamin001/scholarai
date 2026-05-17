@@ -60,8 +60,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleEmailLogin} className="space-y-4 mt-5">
           <div>
-            <label className="block text-sm text-slate-400 mb-1.5">Email</label>
+            <label htmlFor="email" className="block text-sm text-slate-400 mb-1.5">Email</label>
             <InputWithIcon
+              id="email"
+              name="email"
+              autoComplete="email"
               icon={<MailIcon />}
               type="email"
               value={email}
@@ -73,7 +76,7 @@ export default function LoginPage() {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm text-slate-400">Password</label>
+              <label htmlFor="password" className="text-sm text-slate-400">Password</label>
               <Link href="/forgot-password" className="text-xs text-[#0EA5E9] hover:text-[#38bdf8] transition-colors">
                 Forgot password?
               </Link>
@@ -83,6 +86,9 @@ export default function LoginPage() {
                 <LockIcon />
               </div>
               <input
+                id="password"
+                name="password"
+                autoComplete="current-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}

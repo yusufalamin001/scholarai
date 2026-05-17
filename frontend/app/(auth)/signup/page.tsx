@@ -112,21 +112,34 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleEmailSignup} className="space-y-4">
-          <InputField icon={<PersonIcon />} type="text" value={fullName}
-            onChange={e => setFullName(e.target.value)} placeholder="Full name" required />
-
-          <InputField icon={<UniversityIcon />} type="text" value={university}
-            onChange={e => setUniversity(e.target.value)} placeholder="University name" required />
-
-          <InputField icon={<MailIcon />} type="email" value={email}
-            onChange={e => setEmail(e.target.value)} placeholder="Email address" required />
+          <div>
+            <label htmlFor="fullName" className="block text-xs text-slate-400 mb-1.5">Full name</label>
+            <InputField id="fullName" name="fullName" autoComplete="name" icon={<PersonIcon />} type="text" value={fullName}
+              onChange={e => setFullName(e.target.value)} placeholder="Full name" required />
+          </div>
 
           <div>
+            <label htmlFor="university" className="block text-xs text-slate-400 mb-1.5">University</label>
+            <InputField id="university" name="university" autoComplete="organization" icon={<UniversityIcon />} type="text" value={university}
+              onChange={e => setUniversity(e.target.value)} placeholder="University name" required />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-xs text-slate-400 mb-1.5">Email address</label>
+            <InputField id="email" name="email" autoComplete="email" icon={<MailIcon />} type="email" value={email}
+              onChange={e => setEmail(e.target.value)} placeholder="Email address" required />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-xs text-slate-400 mb-1.5">Password</label>
             <div className="relative">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                 <LockIcon />
               </div>
               <input
+                id="password"
+                name="password"
+                autoComplete="new-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -152,9 +165,13 @@ export default function SignupPage() {
             )}
           </div>
 
-          <div className="relative">
+          <div>
+            <label htmlFor="faculty" className="block text-xs text-slate-400 mb-1.5">Faculty</label>
+            <div className="relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-base pointer-events-none">🎓</div>
             <select
+              id="faculty"
+              name="faculty"
               value={faculty}
               onChange={e => setFaculty(e.target.value)}
               className="w-full bg-[#1C2235] border border-[#2A3248] text-slate-400 rounded-xl py-3 pl-10 pr-8 text-sm focus:outline-none focus:border-[#0EA5E9] transition-colors appearance-none"
@@ -166,6 +183,7 @@ export default function SignupPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
               </svg>
+            </div>
             </div>
           </div>
 
