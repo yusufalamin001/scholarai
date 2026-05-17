@@ -6,12 +6,14 @@ interface UserData {
   name: string
   faculty: string
   email: string
+  avatarUrl: string
 }
 
 const UserContext = createContext<UserData>({
   name: 'Student',
   faculty: 'general',
   email: '',
+  avatarUrl: '',
 })
 
 export function UserProvider({

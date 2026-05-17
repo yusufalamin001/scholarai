@@ -10,6 +10,7 @@ interface SidebarProps {
   userName: string
   faculty: string
   userEmail: string
+  avatarUrl?: string
 }
 
 const NAV_ITEMS = [
@@ -20,7 +21,7 @@ const NAV_ITEMS = [
   { label: 'Study Planner', href: '/planner', icon: PlannerIcon },
 ]
 
-export default function Sidebar({ userName, faculty, userEmail }: SidebarProps) {
+export default function Sidebar({ userName, faculty, userEmail, avatarUrl }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const router = useRouter()
@@ -54,9 +55,13 @@ export default function Sidebar({ userName, faculty, userEmail }: SidebarProps) 
       {/* User card */}
       <div className="p-3 border-b border-[#1C2235]">
         <div className="flex items-center gap-2 bg-[#1C2235] rounded-xl p-2">
-          <div className="w-8 h-8 bg-[#0EA5E9]/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-[#0EA5E9] text-xs font-semibold">{initials}</span>
-          </div>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={userName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-8 h-8 bg-[#0EA5E9]/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-[#0EA5E9] text-xs font-semibold">{initials}</span>
+            </div>
+          )}
           <div className="min-w-0">
             <p className="text-white text-xs font-medium truncate">{userName}</p>
             <p className="text-[#475569] text-xs capitalize truncate">{faculty}</p>
