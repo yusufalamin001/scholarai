@@ -35,10 +35,22 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     sources: [],
   })
 
+  const STORAGE_KEY = `chat_history_${id}`
+
   useEffect(() => {
     getCourse(id)
       .then(data => {
         setCourse(data)
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setMessages(parsed)
+              return
+            }
+          } catch {}
+        }
         setMessages([greeting(data.name)])
       })
       .catch(() => router.push('/courses'))
@@ -48,6 +60,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+    }
+  }, [messages])
 
   const handleSend = async (text?: string) => {
     const question = (text || input).trim()
@@ -94,7 +112,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const handleClearChat = () => {
-    if (course) setMessages([greeting(course.name)])
+    if (course) {
+      const fresh = [greeting(course.name)]
+      setMessages(fresh)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh))
+    }
   }
 
   const readyDocuments = (course?.documents || []).filter(d => d.status === 'ready')
