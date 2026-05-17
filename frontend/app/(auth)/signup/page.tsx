@@ -29,6 +29,7 @@ function getStrength(p: string) {
 export default function SignupPage() {
   const router = useRouter()
   const [fullName, setFullName] = useState('')
+  const [university, setUniversity] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [faculty, setFaculty] = useState('')
@@ -51,6 +52,7 @@ export default function SignupPage() {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!faculty) { setError('Please select your faculty'); return }
+    if (!university.trim()) { setError('Please enter your university'); return }
     setLoading(true)
     setError('')
 
@@ -65,10 +67,16 @@ export default function SignupPage() {
       setLoading(false)
     } else {
       if (data.user) {
-        await supabase
-          .from('profiles')
-          .update({ onboarding_complete: true })
-          .eq('id', data.user.id)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const { data: { session } } = await supabase.auth.getSession()
+        await fetch(`${apiUrl}/auth/profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({ faculty, university: university.trim(), full_name: fullName, onboarding_complete: true })
+        })
       }
       router.push('/courses')
     }
@@ -106,6 +114,9 @@ export default function SignupPage() {
         <form onSubmit={handleEmailSignup} className="space-y-4">
           <InputField icon={<PersonIcon />} type="text" value={fullName}
             onChange={e => setFullName(e.target.value)} placeholder="Full name" required />
+
+          <InputField icon={<UniversityIcon />} type="text" value={university}
+            onChange={e => setUniversity(e.target.value)} placeholder="University name" required />
 
           <InputField icon={<MailIcon />} type="email" value={email}
             onChange={e => setEmail(e.target.value)} placeholder="Email address" required />
@@ -199,6 +210,9 @@ function GoogleIcon() {
 }
 function PersonIcon() {
   return <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+}
+function UniversityIcon() {
+  return <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
 }
 function MailIcon() {
   return <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
