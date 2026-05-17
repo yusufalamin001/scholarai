@@ -68,7 +68,7 @@ def update_profile(
     """
     db = get_db()
 
-    allowed_fields = ["faculty", "full_name", "university", "onboarding_complete"]
+    allowed_fields = ["faculty", "full_name", "university", "onboarding_complete", "avatar_url"]
     update_data = {
         k: v for k, v in body.items()
         if k in allowed_fields and v is not None

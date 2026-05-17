@@ -223,3 +223,19 @@ export async function generatePlan(
   if (!res.ok) throw new Error('Failed to generate plan')
   return res.json()
 }
+
+export async function updateProfile(data: {
+  full_name?: string
+  faculty?: string
+  university?: string
+  avatar_url?: string
+}) {
+  const headers = await getHeaders()
+  const res = await fetch(`${API_URL}/auth/profile`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) throw new Error('Failed to update profile')
+  return res.json()
+}

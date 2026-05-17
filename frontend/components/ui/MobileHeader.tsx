@@ -5,12 +5,16 @@ import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useUser } from '@/providers/UserProvider'
 
 export default function MobileHeader() {
   const { theme, setTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const { name, avatarUrl } = useUser()
+
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
 
   const cycleTheme = () => {
     if (theme === 'dark') setTheme('light')
@@ -49,6 +53,14 @@ export default function MobileHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Avatar */}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="w-7 h-7 rounded-full object-cover" />
+        ) : (
+          <div className="w-7 h-7 bg-[#0EA5E9]/20 rounded-full flex items-center justify-center">
+            <span className="text-[#0EA5E9] text-xs font-bold">{initials}</span>
+          </div>
+        )}
         <button
           onClick={cycleTheme}
           className="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors"

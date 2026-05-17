@@ -16,9 +16,10 @@ export interface Message {
 interface Props {
   message: Message
   userName: string
+  avatarUrl?: string
 }
 
-export default function MessageBubble({ message, userName }: Props) {
+export default function MessageBubble({ message, userName, avatarUrl }: Props) {
   const initials = userName
     .split(' ')
     .map(n => n[0])
@@ -29,8 +30,11 @@ export default function MessageBubble({ message, userName }: Props) {
   if (message.role === 'user') {
     return (
       <div className="flex items-start gap-3 flex-row-reverse">
-        <div className="w-8 h-8 bg-[#0EA5E9]/20 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-[#0EA5E9] text-xs font-semibold">{initials}</span>
+        <div className="w-8 h-8 bg-[#0EA5E9]/20 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {avatarUrl
+            ? <img src={avatarUrl} alt={userName} className="w-8 h-8 rounded-full object-cover" />
+            : <span className="text-[#0EA5E9] text-xs font-semibold">{initials}</span>
+          }
         </div>
         <div className="max-w-[75%]">
           <p className="text-theme-muted text-xs mb-1 text-right">You</p>

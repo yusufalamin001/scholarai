@@ -19,7 +19,7 @@ const TOPIC_SUGGESTIONS = [
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { name } = useUser()
+  const { name, avatarUrl } = useUser()
   const [course, setCourse] = useState<Course | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -196,7 +196,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 space-y-6">
           {messages.map(message => (
-            <MessageBubble key={message.id} message={message} userName={name} />
+            <MessageBubble key={message.id} message={message} userName={name} avatarUrl={avatarUrl} />
           ))}
 
           {loading && (

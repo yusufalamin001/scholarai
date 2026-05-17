@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, faculty')
+    .select('full_name, faculty, avatar_url')
     .eq('id', user.id)
     .single()
 
@@ -40,17 +40,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
     'Student'
 
   const faculty = profile?.faculty || 'general'
+  const avatarUrl = profile?.avatar_url || ''
 
   const userData = {
     name: userName,
     faculty,
     email: user.email || '',
+    avatarUrl,
   }
 
   return (
     <UserProvider user={userData}>
       <div className="flex min-h-screen bg-theme-bg text-theme-text">
-        <Sidebar userName={userName} faculty={faculty} userEmail={user.email || ''} />
+        <Sidebar userName={userName} faculty={faculty} userEmail={user.email || ''} avatarUrl={avatarUrl} />
         <MobileHeader />
         <main className="flex-1 md:ml-52 pb-16 md:pb-0 pt-14 md:pt-0 min-h-screen">
           {children}

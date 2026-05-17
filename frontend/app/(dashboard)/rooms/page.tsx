@@ -17,7 +17,7 @@ interface Message {
 }
 
 export default function RoomsPage() {
-  const { name } = useUser()
+  const { name, avatarUrl } = useUser()
   const [rooms, setRooms] = useState<Room[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
@@ -315,7 +315,9 @@ export default function RoomsPage() {
                   }`}>
                     {msg.sender === 'ai'
                       ? <span className="text-sm">🎓</span>
-                      : <span className="text-[#0EA5E9] text-xs font-bold">{name[0]?.toUpperCase()}</span>
+                      : avatarUrl
+                        ? <img src={avatarUrl} alt={name} className="w-8 h-8 rounded-full object-cover" />
+                        : <span className="text-[#0EA5E9] text-xs font-bold">{name[0]?.toUpperCase()}</span>
                     }
                   </div>
                   <div className={`max-w-[75%] ${msg.sender === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
