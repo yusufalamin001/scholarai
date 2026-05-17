@@ -24,9 +24,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
-  if (!user) redirect('/login')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
