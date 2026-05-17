@@ -16,6 +16,7 @@ const FACULTIES = [
 export default function CompleteProfilePage() {
   const router = useRouter()
   const [selected, setSelected] = useState('')
+  const [university, setUniversity] = useState('')
   const [loading, setLoading] = useState(false)
   const [userName, setUserName] = useState('')
   const [initials, setInitials] = useState('YA')
@@ -35,7 +36,7 @@ export default function CompleteProfilePage() {
   }, [router, supabase.auth])
 
   const handleSubmit = async () => {
-    if (!selected || loading) return
+    if (!selected || !university.trim() || loading) return
     setLoading(true)
     const { data: { session } } = await supabase.auth.getSession()
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -45,7 +46,7 @@ export default function CompleteProfilePage() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session?.access_token}`
       },
-      body: JSON.stringify({ faculty: selected, onboarding_complete: true })
+      body: JSON.stringify({ faculty: selected, university: university.trim(), onboarding_complete: true })
     })
     router.push('/courses')
   }
@@ -74,6 +75,17 @@ export default function CompleteProfilePage() {
             Almost there, {userName}! ✨
           </h1>
           <p className="text-slate-400 text-sm">Just one more thing before you start studying</p>
+        </div>
+
+        <div className="mb-5">
+          <label className="block text-white font-medium mb-2">Your university</label>
+          <input
+            type="text"
+            value={university}
+            onChange={e => setUniversity(e.target.value)}
+            placeholder="e.g. University of Lagos"
+            className="w-full bg-[#1C2235] border border-[#2A3248] text-white placeholder-slate-600 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#0EA5E9] transition-colors"
+          />
         </div>
 
         <p className="text-white font-medium mb-4">What faculty are you in?</p>
@@ -107,7 +119,7 @@ export default function CompleteProfilePage() {
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={!selected || loading}
+          disabled={!selected || !university.trim() || loading}
           className="w-full bg-[#1E2540] text-white font-medium py-3 px-4 rounded-xl hover:bg-[#242B45] transition-colors disabled:opacity-40 flex items-center justify-center gap-2 border border-[#2A3258]"
         >
           {loading ? 'Saving...' : "Let's go →"}
