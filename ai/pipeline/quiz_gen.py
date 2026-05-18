@@ -9,7 +9,8 @@ WHY:  Active recall (testing yourself) is one of the most effective study method
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pipeline.retriever import retrieve_context, format_context
-import json, os
+import json
+import os
 
 QUIZ_MODEL = "gemini-2.5-flash-lite"
 
@@ -29,10 +30,16 @@ def generate_quiz(course_id: str, topic: str, faculty: str, num_questions: int =
 
 Generate {num_questions} multiple-choice questions about: "{topic}"
 
+IMPORTANT FORMATTING RULES:
+- Use LaTeX notation for ALL mathematical expressions, wrapped in $ for inline and $$ for block
+- Examples: $x^2$, $\\int_a^b f(x)dx$, $\\frac{{d}}{{dx}}$, $\\sum_{{i=1}}^n$
+- Never write math as plain text like "integral(f(x))" - always use LaTeX
+- Never use unicode characters like ∫ or ∑ - use LaTeX instead
+
 Return ONLY a JSON array, no markdown, no backticks:
 [
   {{
-    "question": "question text",
+    "question": "question text with $LaTeX$ for math",
     "options": ["A. option", "B. option", "C. option", "D. option"],
     "answer": "A",
     "explanation": "brief explanation"

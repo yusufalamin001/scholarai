@@ -9,7 +9,7 @@ WHY:  This is the "R" in RAG. We don't send entire documents to Claude —
 FLOW: question text → embed question → similarity search ChromaDB → return chunks
 """
 
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain.schema import Document
 from embeddings.config import get_embedder
 from typing import List
