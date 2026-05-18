@@ -7,6 +7,9 @@ import tempfile
 import os
 import sys
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -31,14 +34,19 @@ def _run_ingestor(doc_id: str, course_id: str, temp_path: str, db):
         ai_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "..", "ai")
         )
+        logger.info(f"[INGESTOR] ai_dir resolved to: {ai_dir}")
+        logger.info(f"[INGESTOR] ai_dir exists: {os.path.exists(ai_dir)}")
         if ai_dir not in sys.path:
             sys.path.insert(0, ai_dir)
 
         from pipeline.ingestor import ingest_document
+        logger.info(f"[INGESTOR] Starting ingestion for doc {doc_id}")
         ingest_document(course_id, temp_path, doc_id)
+        logger.info(f"[INGESTOR] Ingestion complete for doc {doc_id}")
         db.table("documents").update({"status": "ready"}).eq("id", doc_id).execute()
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"[INGESTOR] Failed for doc {doc_id}: {str(e)}", exc_info=True)
         db.table("documents").update({"status": "error"}).eq("id", doc_id).execute()
 
     finally:
