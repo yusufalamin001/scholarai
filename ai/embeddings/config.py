@@ -4,7 +4,7 @@ import os
 from typing import List
 
 
-EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
+EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent"
 
 
 class GeminiEmbeddings(Embeddings):
@@ -19,7 +19,7 @@ class GeminiEmbeddings(Embeddings):
         response = httpx.post(
             f"{EMBED_URL}?key={self.api_key}",
             json={
-                "model": "models/text-embedding-004",
+                "model": "models/embedding-001",
                 "content": {"parts": [{"text": text}]},
                 "taskType": task_type
             },
