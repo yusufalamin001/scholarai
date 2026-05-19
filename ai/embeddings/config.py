@@ -4,7 +4,7 @@ import os
 from typing import List
 
 
-EMBED_URL = "https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent"
+EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
 
 
 class GeminiEmbeddings(Embeddings):
