@@ -1,13 +1,13 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import os
 
-# Using a free, local embedding model — no API cost
-# all-MiniLM-L6-v2 is fast, lightweight, and works well for academic text
-EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-
-def get_embedder() -> HuggingFaceEmbeddings:
+def get_embedder() -> GoogleGenerativeAIEmbeddings:
     """
-    Returns the shared embedding model instance.
-    This model runs locally — no API call, no cost per embedding.
+    Returns Google's embedding model via Gemini API.
+    No local model download — runs entirely via API call.
+    Uses the same GOOGLE_API_KEY as the rest of the pipeline.
     """
-    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    return GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001",
+        google_api_key=os.environ["GOOGLE_API_KEY"]
+    )
