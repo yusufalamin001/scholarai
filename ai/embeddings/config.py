@@ -4,26 +4,32 @@ import os
 from typing import List
 
 
-EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent"
+EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
 
 
 class GeminiEmbeddings(Embeddings):
     """
-    Custom embeddings class calling Google's REST API v1 directly.
-    Bypasses all SDK gRPC v1beta routing issues.
+    Custom embeddings class calling Google's REST API directly.
+    Uses gemini-embedding-001, the current Gemini embedding model.
+    API key is sent via header to keep it out of logs.
     """
     def __init__(self):
         self.api_key = os.environ["GOOGLE_API_KEY"]
 
     def _embed(self, text: str, task_type: str) -> List[float]:
         response = httpx.post(
-            f"{EMBED_URL}?key={self.api_key}",
-            json={
-                "model": "models/embedding-001",
-                "content": {"parts": [{"text": text}]},
-                "taskType": task_type
+            EMBED_URL,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.api_key,
             },
-            timeout=30.0
+            json={
+                "model": "models/gemini-embedding-001",
+                "content": {"parts": [{"text": text}]},
+                "task_type": task_type,
+                "output_dimensionality": 768,
+            },
+            timeout=30.0,
         )
         response.raise_for_status()
         return response.json()["embedding"]["values"]
