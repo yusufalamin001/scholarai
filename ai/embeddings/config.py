@@ -1,13 +1,37 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain.embeddings.base import Embeddings
+import google.generativeai as genai
 import os
+from typing import List
 
-def get_embedder() -> GoogleGenerativeAIEmbeddings:
+
+class GeminiEmbeddings(Embeddings):
     """
-    Returns Google's embedding model via Gemini API.
-    No local model download — runs entirely via API call.
-    Uses the same GOOGLE_API_KEY as the rest of the pipeline.
+    Custom embeddings class using Google Gemini API directly.
+    Bypasses langchain_google_genai's v1beta routing issue.
     """
-    return GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
-        google_api_key=os.environ["GOOGLE_API_KEY"]
-    )
+    def __init__(self):
+        genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+        self.model = "models/text-embedding-004"
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        embeddings = []
+        for text in texts:
+            result = genai.embed_content(
+                model=self.model,
+                content=text,
+                task_type="retrieval_document"
+            )
+            embeddings.append(result["embedding"])
+        return embeddings
+
+    def embed_query(self, text: str) -> List[float]:
+        result = genai.embed_content(
+            model=self.model,
+            content=text,
+            task_type="retrieval_query"
+        )
+        return result["embedding"]
+
+
+def get_embedder() -> GeminiEmbeddings:
+    return GeminiEmbeddings()
