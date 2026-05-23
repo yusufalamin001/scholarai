@@ -34,8 +34,8 @@ class GeminiEmbeddings(Embeddings):
                 {
                     "model": "models/gemini-embedding-001",
                     "content": {"parts": [{"text": text}]},
-                    "task_type": "RETRIEVAL_DOCUMENT",
-                    "output_dimensionality": 768,
+                    "taskType": "RETRIEVAL_DOCUMENT",
+                    "outputDimensionality": 768,
                 }
                 for text in texts
             ]
@@ -47,8 +47,8 @@ class GeminiEmbeddings(Embeddings):
         payload = {
             "model": "models/gemini-embedding-001",
             "content": {"parts": [{"text": text}]},
-            "task_type": "RETRIEVAL_QUERY",
-            "output_dimensionality": 768,
+            "taskType": "RETRIEVAL_QUERY",
+            "outputDimensionality": 768,
         }
         result = self._request_with_retry(EMBED_URL, payload)
         return result["embedding"]["values"]
