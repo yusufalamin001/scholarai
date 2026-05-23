@@ -2,8 +2,10 @@ from langchain.embeddings.base import Embeddings
 import httpx
 import os
 import time
+import logging
 from typing import List
 
+logger = logging.getLogger(__name__)
 
 EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
 BATCH_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents"
@@ -21,27 +23,27 @@ class GeminiEmbeddings(Embeddings):
         for attempt in range(retries):
             response = httpx.post(url, headers=self.headers, json=payload, timeout=60.0)
             if response.status_code == 429:
-                wait = 2 ** attempt
-                time.sleep(wait)
+                time.sleep(2 ** attempt)
                 continue
+            if response.status_code >= 400:
+                logger.error(f"[EMBED] {response.status_code} response: {response.text}")
             response.raise_for_status()
             return response.json()
         raise Exception("Embedding API rate limit exceeded after retries")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        payload = {
-            "requests": [
-                {
-                    "model": "models/gemini-embedding-001",
-                    "content": {"parts": [{"text": text}]},
-                    "taskType": "RETRIEVAL_DOCUMENT",
-                    "outputDimensionality": 768,
-                }
-                for text in texts
-            ]
-        }
-        result = self._request_with_retry(BATCH_URL, payload)
-        return [e["values"] for e in result["embeddings"]]
+        embeddings = []
+        for text in texts:
+            payload = {
+                "model": "models/gemini-embedding-001",
+                "content": {"parts": [{"text": text}]},
+                "taskType": "RETRIEVAL_DOCUMENT",
+                "outputDimensionality": 768,
+            }
+            result = self._request_with_retry(EMBED_URL, payload)
+            embeddings.append(result["embedding"]["values"])
+            time.sleep(0.5)
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         payload = {
