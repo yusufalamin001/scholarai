@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from db.client import get_db
 from api.routes.auth import get_current_user
 from models.document import DocumentResponse
@@ -25,43 +25,14 @@ def _verify_course_ownership(db, course_id: str, user_id: str):
         raise HTTPException(status_code=404, detail="Course not found")
 
 
-def _run_ingestor(doc_id: str, course_id: str, temp_path: str, db):
-    """
-    Background task: runs the AI ingestor and updates document status.
-    Runs after the upload response has already been returned to the client.
-    """
-    try:
-        ai_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "ai")
-        )
-        logger.info(f"[INGESTOR] ai_dir resolved to: {ai_dir}")
-        logger.info(f"[INGESTOR] ai_dir exists: {os.path.exists(ai_dir)}")
-        if ai_dir not in sys.path:
-            sys.path.insert(0, ai_dir)
-
-        from pipeline.ingestor import ingest_document
-        logger.info(f"[INGESTOR] Starting ingestion for doc {doc_id}")
-        ingest_document(course_id, temp_path, doc_id)
-        logger.info(f"[INGESTOR] Ingestion complete for doc {doc_id}")
-        db.table("documents").update({"status": "ready"}).eq("id", doc_id).execute()
-
-    except Exception as e:
-        logger.error(f"[INGESTOR] Failed for doc {doc_id}: {str(e)}", exc_info=True)
-        db.table("documents").update({"status": "error"}).eq("id", doc_id).execute()
-
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
 
 @router.post("/{course_id}/upload", response_model=DocumentResponse, status_code=201)
 async def upload_document(
     course_id: str,
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user=Depends(get_current_user)
 ):
-    """Uploads a PDF to Supabase Storage and triggers the AI ingestor."""
+    """Uploads a PDF, stores it, and runs AI ingestion synchronously."""
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -71,8 +42,6 @@ async def upload_document(
     content = await file.read()
     size_bytes = len(content)
     doc_id = str(uuid.uuid4())
-
-    # Use doc_id in storage path to guarantee uniqueness
     storage_path = f"{current_user.id}/{course_id}/{doc_id}.pdf"
 
     try:
@@ -94,23 +63,38 @@ async def upload_document(
             "size_bytes": size_bytes,
             "status": "processing"
         }).execute()
-
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to record document")
-
         document = result.data[0]
-
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Save temp file for ingestor then run in background
     temp_path = os.path.join(tempfile.gettempdir(), f"{doc_id}.pdf")
     with open(temp_path, "wb") as f:
         f.write(content)
 
-    background_tasks.add_task(_run_ingestor, doc_id, course_id, temp_path, db)
+    try:
+        ai_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "ai")
+        )
+        if ai_dir not in sys.path:
+            sys.path.insert(0, ai_dir)
+
+        from pipeline.ingestor import ingest_document
+        logger.info(f"[INGESTOR] Starting ingestion for doc {doc_id}")
+        ingest_document(course_id, temp_path, doc_id)
+        logger.info(f"[INGESTOR] Ingestion complete for doc {doc_id}")
+        db.table("documents").update({"status": "ready"}).eq("id", doc_id).execute()
+        document["status"] = "ready"
+    except Exception as e:
+        logger.error(f"[INGESTOR] Failed for doc {doc_id}: {str(e)}", exc_info=True)
+        db.table("documents").update({"status": "error"}).eq("id", doc_id).execute()
+        document["status"] = "error"
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     return document
 
