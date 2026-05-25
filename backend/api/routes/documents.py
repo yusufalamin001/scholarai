@@ -8,6 +8,7 @@ import os
 import sys
 import uuid
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ async def upload_document(
     file: UploadFile = File(...),
     current_user=Depends(get_current_user)
 ):
-    """Uploads a PDF, stores it, and runs AI ingestion synchronously."""
+    """Uploads a PDF, stores it, and runs AI ingestion in a background thread."""
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -74,26 +75,28 @@ async def upload_document(
     with open(temp_path, "wb") as f:
         f.write(content)
 
-    try:
-        ai_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "ai")
-        )
-        if ai_dir not in sys.path:
-            sys.path.insert(0, ai_dir)
+    def _ingest_in_background():
+        try:
+            ai_dir = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "..", "..", "ai")
+            )
+            if ai_dir not in sys.path:
+                sys.path.insert(0, ai_dir)
 
-        from pipeline.ingestor import ingest_document
-        logger.info(f"[INGESTOR] Starting ingestion for doc {doc_id}")
-        ingest_document(course_id, temp_path, doc_id)
-        logger.info(f"[INGESTOR] Ingestion complete for doc {doc_id}")
-        db.table("documents").update({"status": "ready"}).eq("id", doc_id).execute()
-        document["status"] = "ready"
-    except Exception as e:
-        logger.error(f"[INGESTOR] Failed for doc {doc_id}: {str(e)}", exc_info=True)
-        db.table("documents").update({"status": "error"}).eq("id", doc_id).execute()
-        document["status"] = "error"
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+            from pipeline.ingestor import ingest_document
+            logger.info(f"[INGESTOR] Starting ingestion for doc {doc_id}")
+            ingest_document(course_id, temp_path, doc_id)
+            logger.info(f"[INGESTOR] Ingestion complete for doc {doc_id}")
+            get_db().table("documents").update({"status": "ready"}).eq("id", doc_id).execute()
+        except Exception as e:
+            logger.error(f"[INGESTOR] Failed for doc {doc_id}: {str(e)}", exc_info=True)
+            get_db().table("documents").update({"status": "error"}).eq("id", doc_id).execute()
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    thread = threading.Thread(target=_ingest_in_background, daemon=True)
+    thread.start()
 
     return document
 

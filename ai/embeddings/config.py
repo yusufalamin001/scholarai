@@ -42,7 +42,6 @@ class GeminiEmbeddings(Embeddings):
             }
             result = self._request_with_retry(EMBED_URL, payload)
             embeddings.append(result["embedding"]["values"])
-            time.sleep(0.5)
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
