@@ -19,11 +19,13 @@ class GeminiEmbeddings(Embeddings):
             "x-goog-api-key": self.api_key,
         }
 
-    def _request_with_retry(self, url: str, payload: dict, retries: int = 5) -> dict:
+    def _request_with_retry(self, url: str, payload: dict, retries: int = 6) -> dict:
         for attempt in range(retries):
             response = httpx.post(url, headers=self.headers, json=payload, timeout=60.0)
             if response.status_code == 429:
-                time.sleep(2 ** attempt)
+                wait = 5 * (2 ** attempt)
+                logger.warning(f"[EMBED] 429 rate limited, waiting {wait}s")
+                time.sleep(wait)
                 continue
             if response.status_code >= 400:
                 logger.error(f"[EMBED] {response.status_code} response: {response.text}")
@@ -42,6 +44,7 @@ class GeminiEmbeddings(Embeddings):
             }
             result = self._request_with_retry(EMBED_URL, payload)
             embeddings.append(result["embedding"]["values"])
+            time.sleep(1.5)
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
