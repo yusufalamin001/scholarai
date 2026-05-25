@@ -2,52 +2,65 @@
 retriever.py
 ------------
 WHAT: Given a course and a question, finds the most relevant document chunks.
-WHY:  This is the "R" in RAG. We don't send entire documents to Claude —
-      we only send the 5 most relevant paragraphs. This keeps costs low
-      and answers accurate.
+WHY:  This is the "R" in RAG. We only send the most relevant passages to
+      the AI, keeping costs low and answers accurate.
 
-FLOW: question text → embed question → similarity search ChromaDB → return chunks
+FLOW: question text → embed question → similarity search Supabase → return chunks
 """
 
-from langchain_chroma import Chroma
-from langchain.schema import Document
 from embeddings.config import get_embedder
+from supabase import create_client
 from typing import List
 import os
 
-CHROMA_PATH = os.getenv("CHROMA_PERSIST_PATH", "./chroma_store")
+
+class Chunk:
+    """Lightweight chunk object with page_content and metadata."""
+    def __init__(self, content: str, metadata: dict):
+        self.page_content = content
+        self.metadata = metadata
 
 
-def retrieve_context(course_id: str, question: str, k: int = 5) -> List[Document]:
-    """
-    Retrieves the k most relevant document chunks for a given question
-    within a specific course's ChromaDB collection.
-
-    Args:
-        course_id: Scopes the search to this course only
-        question:  The student's question (converted to a vector internally)
-        k:         Number of chunks to return (default 5)
-
-    Returns:
-        List of LangChain Document objects with .page_content and .metadata
-
-    Usage:
-        chunks = retrieve_context("course_abc123", "What is KVL?")
-        context = "\\n\\n".join([c.page_content for c in chunks])
-    """
-    vectorstore = Chroma(
-        collection_name=f"course_{course_id}",
-        embedding_function=get_embedder(),
-        persist_directory=CHROMA_PATH,
+def _get_supabase():
+    return create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_SERVICE_ROLE_KEY"],
     )
-    retriever = vectorstore.as_retriever(search_kwargs={"k": k})
-    return retriever.invoke(question)
 
 
-def format_context(chunks: List[Document]) -> str:
+def retrieve_context(course_id: str, question: str, k: int = 5) -> List[Chunk]:
+    """
+    Retrieves the k most relevant document chunks for a question
+    within a specific course, using Supabase pgvector similarity search.
+    """
+    # 1. Embed the question
+    embedder = get_embedder()
+    query_embedding = embedder.embed_query(question)
+
+    # 2. Call the Supabase match function
+    db = _get_supabase()
+    result = db.rpc(
+        "match_document_chunks",
+        {
+            "query_embedding": query_embedding,
+            "filter_course_id": course_id,
+            "match_count": k,
+        },
+    ).execute()
+
+    # 3. Convert rows to Chunk objects
+    chunks = []
+    for row in (result.data or []):
+        chunks.append(Chunk(
+            content=row["content"],
+            metadata=row.get("metadata", {}),
+        ))
+    return chunks
+
+
+def format_context(chunks: List[Chunk]) -> str:
     """
     Joins retrieved chunks into a single context string for the prompt.
-    Adds source metadata so the AI can reference which document it's from.
     """
     parts = []
     for i, chunk in enumerate(chunks, 1):
