@@ -7,8 +7,12 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
-BATCH_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents"
+MODEL = "models/gemini-embedding-001"
+EMBED_URL = f"https://generativelanguage.googleapis.com/v1beta/{MODEL}:embedContent"
+BATCH_URL = f"https://generativelanguage.googleapis.com/v1beta/{MODEL}:batchEmbedContents"
+
+# Google's batch endpoint accepts up to 100 requests per call
+BATCH_SIZE = 100
 
 
 class GeminiEmbeddings(Embeddings):
@@ -21,7 +25,7 @@ class GeminiEmbeddings(Embeddings):
 
     def _request_with_retry(self, url: str, payload: dict, retries: int = 6) -> dict:
         for attempt in range(retries):
-            response = httpx.post(url, headers=self.headers, json=payload, timeout=60.0)
+            response = httpx.post(url, headers=self.headers, json=payload, timeout=120.0)
             if response.status_code == 429:
                 wait = 5 * (2 ** attempt)
                 logger.warning(f"[EMBED] 429 rate limited, waiting {wait}s")
@@ -34,22 +38,30 @@ class GeminiEmbeddings(Embeddings):
         raise Exception("Embedding API rate limit exceeded after retries")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        embeddings = []
-        for text in texts:
+        all_embeddings = []
+        # Process in batches of BATCH_SIZE
+        for i in range(0, len(texts), BATCH_SIZE):
+            batch = texts[i:i + BATCH_SIZE]
             payload = {
-                "model": "models/gemini-embedding-001",
-                "content": {"parts": [{"text": text}]},
-                "taskType": "RETRIEVAL_DOCUMENT",
-                "outputDimensionality": 768,
+                "requests": [
+                    {
+                        "model": MODEL,
+                        "content": {"parts": [{"text": text}]},
+                        "taskType": "RETRIEVAL_DOCUMENT",
+                        "outputDimensionality": 768,
+                    }
+                    for text in batch
+                ]
             }
-            result = self._request_with_retry(EMBED_URL, payload)
-            embeddings.append(result["embedding"]["values"])
-            time.sleep(1.5)
-        return embeddings
+            result = self._request_with_retry(BATCH_URL, payload)
+            for emb in result["embeddings"]:
+                all_embeddings.append(emb["values"])
+            logger.info(f"[EMBED] Batch {i // BATCH_SIZE + 1} embedded ({len(batch)} chunks)")
+        return all_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         payload = {
-            "model": "models/gemini-embedding-001",
+            "model": MODEL,
             "content": {"parts": [{"text": text}]},
             "taskType": "RETRIEVAL_QUERY",
             "outputDimensionality": 768,
