@@ -25,7 +25,6 @@ def _verify_course_ownership(db, course_id: str, user_id: str):
         raise HTTPException(status_code=404, detail="Course not found")
 
 
-
 @router.post("/{course_id}/upload", response_model=DocumentResponse, status_code=201)
 async def upload_document(
     course_id: str,
@@ -118,7 +117,7 @@ def list_documents(course_id: str, current_user=Depends(get_current_user)):
 
 @router.delete("/{doc_id}", status_code=204)
 def delete_document(doc_id: str, current_user=Depends(get_current_user)):
-    """Deletes a document from Storage, ChromaDB, and the database."""
+    """Deletes a document from Storage, the vector store, and the database."""
     db = get_db()
 
     try:
@@ -141,7 +140,7 @@ def delete_document(doc_id: str, current_user=Depends(get_current_user)):
     except Exception:
         pass  # Non-fatal — continue to DB deletion
 
-    # Delete from ChromaDB
+    # Delete chunks from Supabase vector store
     try:
         ai_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "..", "ai")
@@ -149,13 +148,10 @@ def delete_document(doc_id: str, current_user=Depends(get_current_user)):
         if ai_dir not in sys.path:
             sys.path.insert(0, ai_dir)
 
-        import chromadb
-        chroma_path = os.environ.get("CHROMA_PERSIST_PATH", "../ai/chroma_store")
-        client = chromadb.PersistentClient(path=chroma_path)
-        collection = client.get_collection(f"course_{document['course_id']}")
-        collection.delete(where={"doc_id": doc_id})
+        from pipeline.ingestor import delete_document as delete_chunks
+        delete_chunks(document["course_id"], doc_id)
     except Exception:
-        pass  # Best-effort — ChromaDB may not have this doc yet
+        pass  # Best-effort
 
     # Delete from database
     try:
