@@ -31,6 +31,27 @@ app.include_router(progress.router,  prefix="/progress",  tags=["Progress"])
 app.include_router(rooms.router,     prefix="/rooms",     tags=["Study Rooms"])
 app.include_router(planner.router,   prefix="/planner",   tags=["Planner"])
 
+@app.on_event("startup")
+def warm_up_embedder():
+    """
+    Load the embedding model once at startup so it's cached in memory
+    before any upload. This prevents the model load from happening
+    during a request (which can spike memory and cause a restart).
+    """
+    import sys
+    ai_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "ai")
+    )
+    if ai_dir not in sys.path:
+        sys.path.insert(0, ai_dir)
+    try:
+        from embeddings.config import get_embedder
+        get_embedder()  # triggers model download + load once
+        print("[STARTUP] Embedding model loaded and ready")
+    except Exception as e:
+        print(f"[STARTUP] Failed to preload embedding model: {e}")
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "ScholarAI API"}
