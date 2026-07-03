@@ -6,6 +6,7 @@ import type { Course, ProgressSummary } from '@/lib/api'
 import { useUser } from '@/providers/UserProvider'
 import CourseCard from '@/components/course/CourseCard'
 import CreateCourseModal from '@/components/course/CreateCourseModal'
+import OnboardingModal from '@/components/onboarding/OnboardingModal'
 import Link from 'next/link'
 
 function getGreeting() {
@@ -28,6 +29,18 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    if (!localStorage.getItem('scholarai_onboarded')) {
+      setShowOnboarding(true)
+    }
+  }, [])
+
+  const dismissOnboarding = () => {
+    localStorage.setItem('scholarai_onboarded', 'true')
+    setShowOnboarding(false)
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -148,6 +161,8 @@ export default function CoursesPage() {
           setShowCreateModal(false)
         }}
       />
+
+      {showOnboarding && <OnboardingModal onClose={dismissOnboarding} />}
     </div>
   )
 }
