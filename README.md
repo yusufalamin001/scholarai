@@ -4,7 +4,7 @@
 
 ### An AI-Powered, Discipline-Aware Study Assistant for Nigerian University Students
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![LangChain](https://img.shields.io/badge/LangChain-RAG-1C3C3C?style=flat-square)](https://langchain.com/)
 [![Gemini API](https://img.shields.io/badge/Gemini-Google-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
@@ -65,7 +65,7 @@ ScholarAI uses a dynamic system prompt that adapts to the student's faculty at r
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                       CLIENT LAYER                          │
-│     Next.js 15 · React · Tailwind CSS · KaTeX · Vercel      │
+│     Next.js 16 · React · Tailwind CSS · KaTeX · Vercel      │
 └────────────────────────┬────────────────────────────────────┘
                          │ HTTP / REST
 ┌────────────────────────▼────────────────────────────────────┐
@@ -75,8 +75,9 @@ ScholarAI uses a dynamic system prompt that adapts to the student's faculty at r
                │                          │
 ┌──────────────▼────────────┐  ┌──────────▼──────────────────┐
 │       AI / RAG LAYER      │  │         DATA LAYER           │
-│  LangChain · ChromaDB     │  │  Supabase Auth (Google OAuth)│
-│  Google Gemini API        │  │  PostgreSQL · Storage Buckets│
+│  LangChain · pgvector     │  │  Supabase Auth (Google OAuth)│
+│  Jina Embeddings API      │  │  PostgreSQL · pgvector       │
+│  Google Gemini API        │  │  Storage Buckets             │
 │  Faculty Prompt Library   │  │                              │
 └───────────────────────────┘  └──────────────────────────────┘
 ```
@@ -86,7 +87,7 @@ ScholarAI uses a dynamic system prompt that adapts to the student's faculty at r
 2. Next.js frontend calls a FastAPI REST endpoint with a Supabase JWT token
 3. Backend authenticates the request and reads the student's faculty
 4. Backend loads the appropriate faculty system prompt from the prompt library
-5. LangChain retrieves the 5 most relevant chunks from that course's ChromaDB collection
+5. The pipeline embeds the question with Jina and retrieves the 5 most relevant chunks from the Supabase pgvector store, scoped to that course
 6. Chunks + system prompt + question are sent to the Gemini API
 7. Response is returned, rendered on the frontend with KaTeX where needed
 8. Interaction is logged to PostgreSQL for the topic progress tracker
@@ -97,12 +98,13 @@ ScholarAI uses a dynamic system prompt that adapts to the student's faculty at r
 
 | Category | Technology | Purpose |
 |---|---|---|
-| Frontend | Next.js 15 + React | UI framework, routing, server components |
+| Frontend | Next.js 16 + React | UI framework, routing, server components |
 | Styling | Tailwind CSS | Mobile-first responsive design |
 | Equation Rendering | KaTeX | LaTeX math rendering for Engineering & Sciences |
 | Backend | FastAPI (Python) | REST API, business logic |
 | AI Orchestration | LangChain | RAG pipeline, document loading, chaining |
-| Vector Database | ChromaDB | Per-course document collections, similarity search |
+| Vector Database | Supabase pgvector | Course-scoped document chunks, similarity search |
+| Embeddings | Jina Embeddings API (jina-embeddings-v3) | Converts document chunks and queries to vectors |
 | AI — Q&A | Gemini 2.5 Flash | Strong reasoning for student questions |
 | AI — Quiz & Summary | Gemini 2.5 Flash-Lite | Cost-efficient for structured generation tasks |
 | Auth | Supabase Auth + Google OAuth | Authentication, session management |
@@ -119,7 +121,7 @@ ScholarAI uses a dynamic system prompt that adapts to the student's faculty at r
 ```
 scholarai/
 │
-├── frontend/                        # Next.js 15 application
+├── frontend/                        # Next.js 16 application
 │   ├── app/
 │   │   ├── (auth)/
 │   │   │   ├── login/page.tsx        # Login — Google + email
@@ -165,8 +167,8 @@ scholarai/
 │
 ├── ai/                              # RAG pipeline + prompt library
 │   ├── pipeline/
-│   │   ├── ingestor.py               # PDF → chunks → ChromaDB
-│   │   ├── retriever.py              # Similarity search per course
+│   │   ├── ingestor.py               # PDF → chunks → Supabase pgvector
+│   │   ├── retriever.py              # Similarity search per course (pgvector)
 │   │   ├── chain.py                  # Q&A chain — Gemini 2.5 Flash
 │   │   ├── summarizer.py             # Summarisation — Gemini 2.5 Flash-Lite
 │   │   └── quiz_gen.py               # Quiz generation — Gemini 2.5 Flash-Lite
@@ -177,8 +179,7 @@ scholarai/
 │   │   ├── business.py
 │   │   ├── general.py
 │   │   └── loader.py                 # Dynamic faculty prompt selector
-│   ├── embeddings/config.py          # HuggingFace embedding model (local, free)
-│   ├── chroma_store/                 # Local ChromaDB data (gitignored)
+│   ├── embeddings/config.py          # Jina Embeddings API client (jina-embeddings-v3)
 │   ├── requirements.txt
 │   └── .env.example                  # Copy to .env and fill in
 │
@@ -228,8 +229,8 @@ Day 3–4  [Backend]
   ✦ File upload saving to Supabase Storage
 
 Day 5–7  [AI Pipeline]
-  ✦ ChromaDB running with per-course collections
-  ✦ ingestor.py: PDF → chunks → ChromaDB (tested with real notes)
+  ✦ Supabase pgvector store with per-course document chunks
+  ✦ ingestor.py: PDF → chunks → Jina embeddings → pgvector (tested with real notes)
   ✦ retriever.py: similarity search returning correct chunks
   ✦ chain.py: full Q&A working (Gemini 2.5 Flash)
   ✦ All 5 faculty prompts tested
@@ -353,7 +354,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 GOOGLE_API_KEY=your-google-api-key
-CHROMA_PERSIST_PATH=../ai/chroma_store
+JINA_API_KEY=your-jina-api-key
 ALLOWED_ORIGINS=http://localhost:3000
 APP_ENV=development
 ```
@@ -361,8 +362,7 @@ APP_ENV=development
 **`ai/.env`**
 ```
 GOOGLE_API_KEY=your-google-api-key
-CHROMA_PERSIST_PATH=./chroma_store
-EMBEDDING_MODEL=all-MiniLM-L6-v2
+JINA_API_KEY=your-jina-api-key
 ```
 
 > ⚠️ Never commit `.env` or `.env.local` files. Share values with teammates via WhatsApp only.
@@ -435,6 +435,25 @@ fix/katex-mobile-rendering
 5. Delete your feature branch after it is merged
 6. Pull from `develop` at the start of every session before creating a branch
 7. If you break `develop`, fixing it is your priority before anything else
+
+---
+
+## ⚠️ Known Limitations
+
+ScholarAI runs entirely on free-tier infrastructure so it costs nothing to
+operate. This keeps the project accessible but introduces a few constraints
+that would disappear on paid hosting:
+
+| Limitation | Cause | Impact |
+|---|---|---|
+| Cold starts (~50s) | Render free tier spins down idle instances | The first request after a period of inactivity is slow while the backend wakes up |
+| Document processing time | Free-tier CPU + embedding via API | A document may take up to a minute to move from "processing" to "ready" |
+
+These are infrastructure constraints, not application bugs. The codebase is
+production-ready — moving the backend to a paid Render instance removes the
+cold-start delay with no code changes. Embeddings run through the Jina API
+(free tier: generous daily quota, no credit card), and the AI chat runs on
+the Gemini free tier, so the app has no hard usage cost for a student pilot.
 
 ---
 
