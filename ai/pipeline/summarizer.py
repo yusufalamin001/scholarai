@@ -11,7 +11,7 @@ from pipeline.retriever import retrieve_context, format_context
 from prompts.loader import get_prompt
 import os
 
-SUMMARY_MODEL = "gemini-2.5-flash-lite"  # cheaper for summaries
+SUMMARY_MODEL = "gemini-2.5-flash"
 
 def summarize_topic(course_id: str, topic: str, faculty: str) -> str:
     chunks = retrieve_context(course_id, topic, k=8)

@@ -16,7 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-QUIZ_MODEL = "gemini-2.5-flash-lite"
+QUIZ_MODEL = "gemini-2.5-flash"
 
 
 def _extract_json(raw: str) -> list:
