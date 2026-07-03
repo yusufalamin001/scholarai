@@ -1,7 +1,7 @@
 """
 quiz_gen.py
 -----------
-WHAT: Generates multiple-choice and short-answer quiz questions from course docs.
+WHAT: Generates multiple-choice quiz questions from course docs.
 WHY:  Active recall (testing yourself) is one of the most effective study methods.
       The AI generates questions grounded in the student's own uploaded materials.
       Uses Gemini-2.5-flash-lite model for cost efficiency.
@@ -10,13 +10,53 @@ WHY:  Active recall (testing yourself) is one of the most effective study method
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pipeline.retriever import retrieve_context, format_context
 import json
+import re
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 QUIZ_MODEL = "gemini-2.5-flash-lite"
+
+
+def _extract_json(raw: str) -> list:
+    """
+    Robustly extract a JSON array from the model's response,
+    tolerating markdown fences, leading/trailing prose, etc.
+    """
+    text = raw.strip()
+
+    # Strip markdown code fences if present
+    if "```" in text:
+        # Grab content between the first pair of fences
+        parts = text.split("```")
+        for part in parts:
+            candidate = part
+            if candidate.strip().startswith("json"):
+                candidate = candidate.strip()[4:]
+            candidate = candidate.strip()
+            if candidate.startswith("["):
+                text = candidate
+                break
+
+    # Fallback: extract the first [...] block via regex
+    if not text.strip().startswith("["):
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if match:
+            text = match.group(0)
+
+    return json.loads(text.strip())
+
 
 def generate_quiz(course_id: str, topic: str, faculty: str, num_questions: int = 5) -> list[dict]:
     chunks = retrieve_context(course_id, topic, k=6)
     context = format_context(chunks)
+
+    if not context.strip():
+        raise ValueError(
+            "No course materials found for this topic. "
+            "Upload documents and wait for them to finish processing before generating a quiz."
+        )
 
     llm = ChatGoogleGenerativeAI(
         model=QUIZ_MODEL,
@@ -47,8 +87,8 @@ Return ONLY a JSON array, no markdown, no backticks:
 ]""")
 
     raw = response.content.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    return json.loads(raw.strip())
+    try:
+        return _extract_json(raw)
+    except Exception as e:
+        logger.error(f"[QUIZ] Failed to parse model output: {e}. Raw response: {raw[:500]}")
+        raise ValueError(f"Could not parse quiz from AI response: {e}")
