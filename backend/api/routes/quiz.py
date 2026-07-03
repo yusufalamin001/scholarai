@@ -4,6 +4,9 @@ from api.routes.auth import get_current_user
 from models.quiz import QuizGenerateRequest, QuizSubmitRequest, QuizSubmitResponse
 import sys
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -50,6 +53,7 @@ def generate_quiz(body: QuizGenerateRequest, current_user=Depends(get_current_us
             body.num_questions
         )
     except Exception as e:
+        logger.error(f"[QUIZ] Generation failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Quiz generation error: {str(e)}")
 
     return {
