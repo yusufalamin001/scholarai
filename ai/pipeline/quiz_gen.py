@@ -53,10 +53,11 @@ def generate_quiz(course_id: str, topic: str, faculty: str, num_questions: int =
     context = format_context(chunks)
 
     if not context.strip():
-        raise ValueError(
-            "No course materials found for this topic. "
-            "Upload documents and wait for them to finish processing before generating a quiz."
-        )
+        # Fall back to a broad retrieval using the course's general content
+        # by searching with a more generic query, so quizzes still work even
+        # when the exact topic label doesn't match chunk text closely.
+        chunks = retrieve_context(course_id, f"key concepts and topics in {topic}", k=6)
+        context = format_context(chunks)
 
     llm = ChatGoogleGenerativeAI(
         model=QUIZ_MODEL,

@@ -52,6 +52,10 @@ def generate_quiz(body: QuizGenerateRequest, current_user=Depends(get_current_us
             course["faculty"],
             body.num_questions
         )
+    except ValueError as e:
+        # Expected, user-facing condition (e.g. no materials) — return 400
+        logger.info(f"[QUIZ] Cannot generate: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"[QUIZ] Generation failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Quiz generation error: {str(e)}")
